@@ -27,16 +27,20 @@ class Runner(object):
             finalFields = np.array([x,y,z])
             objectiveSeries[i] = self.objective(finalFields, parameter)
     
-        return finalField, objectiveSeries
+        return finalFields, objectiveSeries
 
     def objective(self, fields, parameter):
         return fields[-1]
 
     def source(self, fields, parameter):
         sourceTerms = np.zeros_like(fields)
-        sourceTerms[1] = fields[0]
+        sourceTerms[1] = self.dt*fields[0]
         return sourceTerms
         
+    def gradientObjective(self, fields, parameter, nSteps):
+        dJ = np.zeros_like(fields)
+        dJ[-1] = 1.0/nSteps
+        return dJ
 
     def tangentSolver(self, initFields, initPrimalFields, \
             parameter, nSteps, homogeneous=False):
@@ -49,6 +53,7 @@ class Runner(object):
             primalTrj[i], objectiveTrj[i] = self.primalSolver(\
                     primalTrj[i-1], parameter, 1)
         xt, yt, zt = initFields
+        sensitivity = 0.
         for i in range(1, nSteps):
             x, y, z = primalTrj[i-1]
             dxt_dt = sigma*(yt - xt) 
@@ -61,8 +66,13 @@ class Runner(object):
             
             finalFields = np.array([xt, yt, zt])
             if(homogeneous==False):
-                finalFields += dt*self.source(primalTrj[i-1],\
+                finalFields += self.source(primalTrj[i-1],\
                         parameter)
+            sensitivity += np.dot(finalFields, \
+                    self.gradientObjective(primalTrj[i], parameter, \
+                    nSteps))
+        return finalFields, sensitivity
+            
 
     def adjointSolver(self, initFields, initPrimalFields, \
             parameter, nSteps, homogeneous=False):
@@ -78,6 +88,7 @@ class Runner(object):
             primalTrj[i], objectiveTrj[i] = self.primalSolver(\
                     primalTrj[i-1], parameter, 1)
         xa, ya, za = initFields
+        sensitivity = 0.
         for i in range(nSteps, 0, -1):
             x, y, z = primalTrj[i-1]
             dxa_dt = -sigma*xa + (parameter + rho - z)*ya + \
@@ -88,13 +99,13 @@ class Runner(object):
             xa += dt*dxa_dt 
             ya += dt*dya_dt
             za += dt*dza_dt
-            
+           
+            finalFields = np.array([xa, ya, za])
             if(homogeneous==False):
-                dJ = gradientObjective(primalTrj[i-1])
-                xa += (1/nSteps)*dJ[0]
-                ya += (1/nSteps)*dJ[1]
-                za += (1/nSteps)*dJ[2]
-
+                finalFields += gradientObjective(primalTrj[i-1])
+            sensitivity += np.dot(finalFields, self.source(\
+                    primalTrj[i-1], parameter))
+        return finalFields, sensitivity
             
 
 
