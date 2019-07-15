@@ -4,6 +4,7 @@ class Runner(object):
         self.solverName = "Lorenz '63"
         self.sigma = 10.
         self.beta = 8./3.
+        self.rho = 28.0
         self.dt = 1.e-2
 
 
@@ -12,11 +13,12 @@ class Runner(object):
         x, y, z = initFields
         sigma = self.sigma
         beta = self.beta
+        rho = self.rho
         dt = self.dt
         objectiveSeries = np.zeros(nSteps)
         for i in range(nSteps):
             dx_dt = sigma*(y - x)
-            dy_dt = x*(parameter - z) - y
+            dy_dt = x*(parameter + rho - z) - y
             dz_dt = x*y - beta*z
             
             x += dt*dx_dt
@@ -30,12 +32,47 @@ class Runner(object):
     def objective(self, fields, parameter):
         return fields[-1]
 
-    def adjointSolver(self, initFields, initPrimalFields, \
+    def source(self, fields, parameter):
+        sourceTerms = np.zeros_like(fields)
+        sourceTerms[1] = fields[0]
+        return sourceTerms
+        
+
+    def tangentSolver(self, initFields, initPrimalFields, \
             parameter, nSteps, homogeneous=False):
         primalTrj = np.empty(shape=(nSteps, initFields.shape[0]))
         objectiveTrj = np.empty(nSteps)
 
-        primalTrj[0] = initFields
+        primalTrj[0] = initPrimalFields
+        objectiveTrj[0] = self.objective(primalTrj[0],parameter)
+        for i in range(1, nSteps):
+            primalTrj[i], objectiveTrj[i] = self.primalSolver(\
+                    primalTrj[i-1], parameter, 1)
+        xt, yt, zt = initFields
+        for i in range(1, nSteps):
+            x, y, z = primalTrj[i-1]
+            dxt_dt = sigma*(yt - xt) 
+            dyt_dt = (parameter + rho - z)*xt - zt*x - yt 
+            dzt_dt = x*yt + y*xt - beta*zt
+            
+            xt += dt*dxt_dt 
+            yt += dt*dyt_dt
+            zt += dt*dzt_dt
+            
+            finalFields = np.array([xt, yt, zt])
+            if(homogeneous==False):
+                finalFields += dt*self.source(primalTrj[i-1],\
+                        parameter)
+
+    def adjointSolver(self, initFields, initPrimalFields, \
+            parameter, nSteps, homogeneous=False):
+        rho = self.rho
+        beta = self.beta
+        sigma = self.sigma
+        primalTrj = np.empty(shape=(nSteps, initFields.shape[0]))
+        objectiveTrj = np.empty(nSteps)
+
+        primalTrj[0] = initAdjointFields
         objectiveTrj[0] = self.objective(primalTrj[0],parameter)
         for i in range(1, nSteps):
             primalTrj[i], objectiveTrj[i] = self.primalSolver(\
@@ -43,7 +80,7 @@ class Runner(object):
         xa, ya, za = initFields
         for i in range(nSteps, 0, -1):
             x, y, z = primalTrj[i-1]
-            dxa_dt = -sigma*xa + (parameter - z)*ya + \
+            dxa_dt = -sigma*xa + (parameter + rho - z)*ya + \
                     y*za 
             dya_dt = sigma*xa - ya + x*za 
             dza_dt = -x*ya - beta*za 
@@ -52,7 +89,7 @@ class Runner(object):
             ya += dt*dya_dt
             za += dt*dza_dt
             
-            if(homogeneous):
+            if(homogeneous==False):
                 dJ = gradientObjective(primalTrj[i-1])
                 xa += (1/nSteps)*dJ[0]
                 ya += (1/nSteps)*dJ[1]
