@@ -46,7 +46,7 @@ class Runner(object):
             parameter, nSteps, homogeneous=False):
         primalTrj = np.empty(shape=(nSteps, initFields.shape[0]))
         objectiveTrj = np.empty(nSteps)
-
+        dt = self.dt
         primalTrj[0] = initPrimalFields
         objectiveTrj[0] = self.objective(primalTrj[0],parameter)
         for i in range(1, nSteps):
@@ -54,11 +54,11 @@ class Runner(object):
                     primalTrj[i-1], parameter, 1)
         xt, yt, zt = initFields
         sensitivity = 0.
-        for i in range(1, nSteps):
-            x, y, z = primalTrj[i-1]
-            dxt_dt = sigma*(yt - xt) 
-            dyt_dt = (parameter + rho - z)*xt - zt*x - yt 
-            dzt_dt = x*yt + y*xt - beta*zt
+        for i in range(nSteps):
+            x, y, z = primalTrj[i]
+            dxt_dt = self.sigma*(yt - xt) 
+            dyt_dt = (parameter + self.rho - z)*xt - zt*x - yt 
+            dzt_dt = x*yt + y*xt - self.beta*zt
             
             xt += dt*dxt_dt 
             yt += dt*dyt_dt
@@ -66,10 +66,11 @@ class Runner(object):
             
             finalFields = np.array([xt, yt, zt])
             if(homogeneous==False):
-                finalFields += self.source(primalTrj[i-1],\
+                finalFields += self.source(primalTrj[i],\
                         parameter)
-            sensitivity += np.dot(finalFields, \
-                    self.gradientObjective(primalTrj[i], parameter, \
+            if(i < nSteps-1):
+                sensitivity += np.dot(finalFields, \
+                    self.gradientObjective(primalTrj[i+1], parameter, \
                     nSteps))
         return finalFields, sensitivity
             
