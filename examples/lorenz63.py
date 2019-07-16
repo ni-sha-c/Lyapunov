@@ -85,18 +85,19 @@ class Runner(object):
         rho = self.rho
         beta = self.beta
         sigma = self.sigma
+        dt = self.dt
         primalTrj = np.empty(shape=(nSteps, initFields.shape[0]))
         objectiveTrj = np.empty(nSteps)
 
-        primalTrj[0] = initAdjointFields
+        primalTrj[0] = initPrimalFields
         objectiveTrj[0] = self.objective(primalTrj[0],parameter)
         for i in range(1, nSteps):
             primalTrj[i], objectiveTrj[i] = self.primalSolver(\
                     primalTrj[i-1], parameter, 1)
         xa, ya, za = initFields
         sensitivity = 0.
-        for i in range(nSteps, 0, -1):
-            x, y, z = primalTrj[i-1]
+        for i in range(nSteps-1, -1, -1):
+            x, y, z = primalTrj[i]
             dxa_dt = -sigma*xa + (parameter + rho - z)*ya + \
                     y*za 
             dya_dt = sigma*xa - ya + x*za 
@@ -108,8 +109,11 @@ class Runner(object):
            
             finalFields = np.array([xa, ya, za])
             if(homogeneous==False):
-                finalFields += gradientObjective(primalTrj[i-1])
-            sensitivity += np.dot(finalFields, self.source(\
+                finalFields += self.gradientObjective(primalTrj[i],\
+                        parameter, nSteps)
+                xa, ya, za = finalFields
+            if(i > 0):
+                sensitivity += np.dot(finalFields, self.source(\
                     primalTrj[i-1], parameter))
         return finalFields, sensitivity
             

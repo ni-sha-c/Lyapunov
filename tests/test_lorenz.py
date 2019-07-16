@@ -63,6 +63,38 @@ def test_tangentSolver():
     
     assert(np.max(abs(errs))<1.e-4)
 
+#if __name__=="__main__":
+def test_adjointSolver():
+    print("Testing homogeneous adjoint")
+    initPrimal = rand(3)
+    nSteps = 10
+    parameter = 0.
+    initPrimal, objectiveTrj = runner.primalSolver(initPrimal,\
+            parameter, nSteps)
+    initAdjoint = rand(3)
+    initTangent = rand(3)
+    finalTangent, tangentSensitivity = runner.tangentSolver(\
+            initTangent, initPrimal, parameter, nSteps, \
+            homogeneous=True)
+    finalAdjoint, adjointSensitivity = runner.adjointSolver(\
+            initAdjoint, initPrimal, parameter, nSteps, \
+            homogeneous=True)
+    initDotProduct = np.dot(finalAdjoint, initTangent)
+    finalDotProduct = np.dot(initAdjoint, finalTangent)
+    print("Tangent-Adjoint dot product at time {0} is {1}".format(\
+            0, initDotProduct))
+    print("Tangent-Adjoint dot product at time {0} is {1}".format(\
+            nSteps, finalDotProduct))
+    assert(np.abs(initDotProduct - finalDotProduct) < 1.e-10)
+    print("Testing inhomogeneous adjoint")
+    initTangent = zeros_like(initPrimal)
+    initAdjoint = zeros_like(initPrimal)
+    finalTangent, tangentSensitivity = runner.tangentSolver(\
+            initTangent, initPrimal, parameter, nSteps)
+    finalAdjoint, adjointSensitivity = runner.adjointSolver(\
+            initAdjoint, initPrimal, parameter, nSteps)
+    print("Tangent sensitivity is ", tangentSensitivity)
+    print("Adjoint sensitivity is ", adjointSensitivity)
 
 
 
