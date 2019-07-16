@@ -26,7 +26,6 @@ def test_attractor():
             1.0)
     return
     
-#if __name__=="__main__":
 def test_tangentSolver():
     nSteps = 500
     initPrimal = rand(3)
@@ -37,6 +36,7 @@ def test_tangentSolver():
     nSteps = 5
     initTangent = np.random.rand(3)
     errs = np.empty_like(epss)
+    print("Testing homogeneous tangent")
     finalTangent, sensitivity = runner.tangentSolver(initTangent, \
             initPrimal, parameter, nSteps, homogeneous=True)
     for i, eps in enumerate(epss):
@@ -48,6 +48,21 @@ def test_tangentSolver():
         errs[i] = np.linalg.norm((finalPrimal - finalPrimal0)/(2.0*eps) \
                 - finalTangent)
     assert(np.max(abs(errs))<1.e-4)
+    print("Testing inhomogeneous tangent")
+    initTangent = np.zeros_like(initPrimal)
+    finalTangent, sensitivity = runner.tangentSolver(initTangent, \
+            initPrimal, parameter, nSteps)
+    for i, eps in enumerate(epss):
+        finalPrimal0, objectiveTrj0 = runner.primalSolver(initPrimal,\
+                parameter - eps, nSteps)
+        finalPrimal, objectiveTrj = runner.primalSolver(initPrimal,\
+                parameter + eps, nSteps)
+        sensitivity_fd = 1./(2*eps)*np.sum(objectiveTrj[:-1] - \
+                objectiveTrj0[:-1])/nSteps
+        errs[i] = np.abs(sensitivity_fd - sensitivity)
+    
+    assert(np.max(abs(errs))<1.e-4)
+
 
 
 
