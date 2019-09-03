@@ -17,4 +17,10 @@ class SerialRunner(Runner):
         
         return finalFields, dJds
 
+    def runTangent(self, initAdjointFields, primalData, \
+            initPrimalFields, case, homogeneous=False, \
+            interprocess=None, args=None):
+        parameter, nSteps = primalData
+        
+        return finalFields, dJds
 
