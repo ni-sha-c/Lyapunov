@@ -6,6 +6,7 @@ class Runner(object):
         self.beta = 8./3.
         self.rho = 28.0
         self.dt = 1.e-2
+        self.state_dim = 3
 
 
     def primalSolver(self, initFields, parameter,\

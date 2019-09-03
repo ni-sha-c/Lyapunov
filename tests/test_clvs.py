@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, '../examples')
 from lorenz63 import Runner
 
-class LorenzTest(unittest.TestCase):
+class ClvTest(unittest.TestCase):
     def setUp(self):
         self.runner = Runner()
     def test_attractor(self):
