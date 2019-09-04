@@ -13,12 +13,15 @@ class ClvTest(unittest.TestCase):
     def test_les(self):
         les, clvs = self.CLV.compute_les_and_clvs()
         les_benchmark = array([0.906, 1.e-8, -14.572])
+        d_u = self.CLV.subspace_dim
+        les_benchmark = les_benchmark[:d_u]
         err_les = abs((les_benchmark - les)/les_benchmark)
         print("Computed LEs" , les)
         print("Benchmark LEs", les_benchmark)
         print(err_les)
-        self.assertTrue(max(err_les[0],err_les[2])<0.2)
-
+        if d_u > 2:
+            self.assertTrue(max(err_les[0],err_les[2])<0.2)
+        self.assertTrue(err_les[0]<0.2)
     def test_clv_growth(self):
         les, clvs = self.CLV.compute_les_and_clvs()
         nSteps = self.CLV.nSteps_backward
@@ -48,7 +51,7 @@ class ClvTest(unittest.TestCase):
                     parameter, 1)
         print(les_from_clvs)
         print(les)
-
+        print(self.CLV.clvs[0])
 
 
 if __name__=="__main__":
