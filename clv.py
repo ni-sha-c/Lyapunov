@@ -56,7 +56,11 @@ class CLV():
             primal, objectiveTrj = runner.primalSolver(primal, \
                 parameter, 1)
         self.stateZero = copy(primal)
-        return
+        self.primal = primal
+        self.tangents = tangents
+        self.R = R
+        
+    
 
     def forward_steps(self):
         self.get_most_expanding_directions()
@@ -72,7 +76,7 @@ class CLV():
         nSteps = self.nSteps
         for i in range(self.nSteps_backward):
             RTrj[i] = R
-            QTrj[i] = tangents
+            QTrj[i] = tangents.T
             for j in range(d_u):
                 tangents[j], sensitivity = runner.tangentSolver(\
                     tangents[j], primal, parameter, 1,\
@@ -82,6 +86,11 @@ class CLV():
             tangents = tangents.T
             primal, objectiveTrj = runner.primalSolver(primal, \
                 parameter, 1) 
+        self.primal = primal
+        self.tangents = tangents
+        self.R = R
+        self.QTrj = QTrj
+        self.RTrj = RTrj
 
     def backward_steps(self):
         self.forward_steps()
@@ -97,6 +106,6 @@ class CLV():
 
     def compute_les_and_clvs(self):
         self.backward_steps()
-        return self.lyap_exps
+        return self.lyap_exps, self.clvs
 
 
