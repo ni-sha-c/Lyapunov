@@ -21,24 +21,33 @@ class ClvTest(unittest.TestCase):
 
     def test_clv_growth(self):
         les, clvs = self.CLV.compute_les_and_clvs()
-        tangents = clvs[0]
+        nSteps = self.CLV.nSteps_backward
+        d_u = self.CLV.subspace_dim
+        d = self.runner.state_dim
+        self.assertEqual(clvs.shape, (nSteps, d, d_u))
+        tangents = clvs[0].T
+        tangents_n = clvs[nSteps//2].T
         primal = self.CLV.stateZero
-        nSteps_test = 1000
+        nSteps_test = 5000
         d_u = self.CLV.subspace_dim
         runner = self.runner
         parameter = 0.
-        les_from_clvs = empty_like(les)
+        les_from_clvs = zeros_like(les)
+        dt = self.runner.dt
         for i in range(nSteps_test):
             for j in range(d_u):
                 tangents[j], sensitivity = runner.tangentSolver(\
                     tangents[j], primal, parameter, 1,\
                     homogeneous=True)
             tangents = tangents.T
-            tangents /= linalg.norm(tangents,axis=1)
-            print(tangents.T)
-            print(clvs[i+1])
+            tangent_norms = linalg.norm(tangents,axis=0)
+            les_from_clvs += log(abs(tangent_norms))/dt/nSteps_test
+            tangents /= tangent_norms
+            tangents = tangents.T
             primal, objectiveTrj = runner.primalSolver(primal, \
                     parameter, 1)
+        print(les_from_clvs)
+        print(les)
 
 
 
