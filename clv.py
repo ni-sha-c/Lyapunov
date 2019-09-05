@@ -6,7 +6,7 @@ from lorenz63 import Runner
 class CLV():
     def __init__(self):
         self.runner = Runner()
-        self.subspace_dim = 2
+        self.subspace_dim = 3
 
     def setup(self):
         nSpinUp = 500
@@ -59,6 +59,7 @@ class CLV():
         self.primal = primal
         self.tangents = tangents
         self.R = R
+        self.lyap_exps = lyap_exps
         
     
 
@@ -91,20 +92,21 @@ class CLV():
         self.R = R
         self.QTrj = QTrj
         self.RTrj = RTrj
+        self.lyap_exps = lyap_exps
 
     def backward_steps(self):
         self.forward_steps()
         d_u = self.subspace_dim
         self.coeffsTrj[-1] = eye(d_u,d_u)
         self.clvs[-1] = self.QTrj[-1]
+        lyap_exps = exp(self.lyap_exps*self.runner.dt)
         for i in range(self.nSteps_backward-1,0,-1):
             self.coeffsTrj[i-1] = linalg.solve(self.RTrj[i], \
                     self.coeffsTrj[i]) 
-            self.coeffsTrj[i-1] = self.coeffsTrj[i-1].T
-            self.coeffsTrj[i-1] /= linalg.norm(self.coeffsTrj[i-1],axis=0)
+            self.coeffsTrj[i-1] *= lyap_exps
             self.clvs[i-1] = dot(self.QTrj[i-1], self.coeffsTrj[i-1])
             self.clvs[i-1] /= linalg.norm(self.clvs[i-1],axis=0)
-            self.coeffsTrj[i-1] = self.coeffsTrj[i-1].T
+    
     def compute_les_and_clvs(self):
         self.backward_steps()
         return self.lyap_exps, self.clvs

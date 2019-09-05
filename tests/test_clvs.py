@@ -28,8 +28,7 @@ class ClvTest(unittest.TestCase):
         d_u = self.CLV.subspace_dim
         d = self.runner.state_dim
         self.assertEqual(clvs.shape, (nSteps, d, d_u))
-        tangents = clvs[0].T
-        tangents_n = clvs[nSteps//2].T
+        clvs = self.CLV.clvs
         primal = self.CLV.stateZero
         nSteps_test = 5000
         d_u = self.CLV.subspace_dim
@@ -38,6 +37,7 @@ class ClvTest(unittest.TestCase):
         les_from_clvs = zeros_like(les)
         dt = self.runner.dt
         for i in range(nSteps_test):
+            tangents = clvs[i].T
             for j in range(d_u):
                 tangents[j], sensitivity = runner.tangentSolver(\
                     tangents[j], primal, parameter, 1,\
@@ -46,13 +46,17 @@ class ClvTest(unittest.TestCase):
             tangent_norms = linalg.norm(tangents,axis=0)
             les_from_clvs += log(abs(tangent_norms))/dt/nSteps_test
             tangents /= tangent_norms
-            tangents = tangents.T
             primal, objectiveTrj = runner.primalSolver(primal, \
                     parameter, 1)
-        print(les_from_clvs)
-        print(les)
-        print(self.CLV.clvs[0])
-
+        les_benchmark = array([0.906, 1.e-8, -14.572])
+        les_benchmark = les_benchmark[:d_u]
+        err_les = abs((les_benchmark - les_from_clvs)/les_benchmark)
+        print("LEs from CLVs" , les_from_clvs)
+        print("Benchmark LEs", les_benchmark)
+        print(err_les)
+        if d_u > 2:
+            self.assertTrue(max(err_les[0],err_les[2])<0.2)
+        self.assertTrue(err_les[0]<0.2)
 
 if __name__=="__main__":
     unittest.main()
