@@ -2,11 +2,11 @@ from numpy import *
 import sys
 sys.path.insert(0,'examples/')
 from lorenz63 import Runner
-
 class CLV():
-    def __init__(self):
+    def __init__(self,d_u=3,nTrj=500):
         self.runner = Runner()
-        self.subspace_dim = 3
+        self.subspace_dim = d_u
+        self.nTrj = nTrj
 
     def setup(self):
         nSpinUp = 500
@@ -18,9 +18,9 @@ class CLV():
             parameter, nSpinUp)
         d_u = self.subspace_dim
         self.nSteps = 10000
-        self.nSteps_forward = self.nSteps//2
-        self.nSteps_backward = self.nSteps//2
+        self.nSteps_backward = self.nTrj
         nSteps_backward = self.nSteps_backward
+        self.nSteps_forward = self.nSteps - nSteps_backward
         tangents_mt1 = random.rand(d_u, d)
         tangents_mt1, R = linalg.qr(tangents_mt1.T)
         self.R = R

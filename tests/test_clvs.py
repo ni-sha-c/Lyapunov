@@ -30,13 +30,12 @@ class ClvTest(unittest.TestCase):
         self.assertEqual(clvs.shape, (nSteps, d, d_u))
         clvs = self.CLV.clvs
         primal = self.CLV.stateZero
-        nSteps_test = 5000
         d_u = self.CLV.subspace_dim
         runner = self.runner
         parameter = 0.
         les_from_clvs = zeros_like(les)
         dt = self.runner.dt
-        for i in range(nSteps_test):
+        for i in range(nSteps):
             tangents = clvs[i].T
             for j in range(d_u):
                 tangents[j], sensitivity = runner.tangentSolver(\
@@ -44,7 +43,7 @@ class ClvTest(unittest.TestCase):
                     homogeneous=True)
             tangents = tangents.T
             tangent_norms = linalg.norm(tangents,axis=0)
-            les_from_clvs += log(abs(tangent_norms))/dt/nSteps_test
+            les_from_clvs += log(abs(tangent_norms))/dt/nSteps
             tangents /= tangent_norms
             primal, objectiveTrj = runner.primalSolver(primal, \
                     parameter, 1)
