@@ -40,14 +40,20 @@ class CLV():
         runner = self.runner
         d = runner.state_dim
         d_u = self.subspace_dim
-        
+        stateInit = random.rand(d)
+        parameter = 0.
+        nSpinUp = 500
+        self.nSteps = 10000
+        stateInit, objectiveTrj = runner.primalSolver(stateInit,\
+            parameter, nSpinUp)
+        self.stateZero = stateInit
         adjoints_mt1 = random.rand(d_u, d)
         adjoints_mt1, R = linalg.qr(adjoints_mt1.T)
         self.R_a = R
         self.adjoints = adjoints_mt1.T
         self.lyap_exps_a = zeros(d_u)
         nTrj = self.nTrj
-        self.nSteps_backward_a = nSteps - nTrj
+        self.nSteps_backward_a = self.nSteps - nTrj
         self.RTrj_a = empty((nTrj,d_u,d_u))
         self.QTrj_a = empty((nTrj,d,d_u))
         self.clvs_a = empty((nTrj,d,d_u))
@@ -56,7 +62,7 @@ class CLV():
 
 
     def get_most_expanding_directions(self):
-        self.setup()
+        self.setup_tangents()
         nSteps = self.nSteps
         nSteps_forward = self.nSteps_forward
         nSteps_backward = self.nSteps_backward
@@ -134,8 +140,33 @@ class CLV():
    
 
     def backward_steps_adjoint(self):
-        self.primal = copy(self.stateZero)
-        
+        self.setup_adjoints()
+        runner = self.runner 
+        d = runner.state_dim
+        d_u = self.subspace_dim
+        nSteps = self.nSteps 
+        adjointSolver = runner.adjointSolver
+        primalTrj = empty((nSteps, d))
+        primalTrj[0] = self.stateZero
+        parameter = 0.
+        dt = self.runner.dt
+        for n in range(1,nSteps):
+            primalTrj[n], objectiveTrj = runner.primalSolver(primalTrj[n-1], \
+                parameter, 1)
+        adjoints = random.rand(d_u, d)
+        adjoints, R = linalg.qr(adjoints.T)
+        adjoints = adjoints.T
+        lyap_exps_a = self.lyap_exps_a
+        for n in range(nSteps-1,-1,-1):
+            for j in range(d_u):
+                adjoints[j], sensitivity = adjointSolver(adjoints[j], primalTrj[n], \
+                        parameter, 1, True)
+            adjoints, R = linalg.qr(adjoints.T)
+            adjoints = adjoints.T
+            lyap_exps_a += log(abs(diag(R)))/dt/nSteps 
+        return lyap_exps_a
+
+
 
 
 
