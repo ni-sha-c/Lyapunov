@@ -124,7 +124,7 @@ class CLV():
         self.lyap_exps = lyap_exps
 
 
-    def backward_steps(self,primalInit=None):
+    def backward_steps(self):
         self.forward_steps()
         d_u = self.subspace_dim
         self.coeffsTrj[-1] = eye(d_u,d_u)
@@ -194,8 +194,8 @@ class CLV():
 
 
 
-    def compute_les_and_clvs(self,primalInit=None):
-        self.backward_steps(primalInit)
+    def compute_les_and_clvs(self):
+        self.backward_steps()
         return self.lyap_exps, self.clvs
 
     def compute_les_and_clvs_adjoint(self,primalInit=None):
