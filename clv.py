@@ -40,20 +40,19 @@ class CLV():
         runner = self.runner
         d = runner.state_dim
         d_u = self.subspace_dim
-        stateInit = random.rand(d)
+        stateInit_a = random.rand(d)
         parameter = 0.
         nSpinUp = 500
-        self.nSteps = 10000
-        stateInit, objectiveTrj = runner.primalSolver(stateInit,\
+        self.nSteps_a = 10000
+        stateInit_a, objectiveTrj = runner.primalSolver(stateInit_a,\
             parameter, nSpinUp)
-        self.stateZero = stateInit
-        adjoints_mt1 = random.rand(d_u, d)
-        adjoints_mt1, R = linalg.qr(adjoints_mt1.T)
+        self.stateZero_a = stateInit_a
+        adjoints_pt1 = random.rand(d_u, d)
+        adjoints_pt1, R = linalg.qr(adjoints_pt1.T)
         self.R_a = R
-        self.adjoints = adjoints_mt1.T
+        self.adjoints = adjoints_pt1.T
         self.lyap_exps_a = zeros(d_u)
         nTrj = self.nTrj
-        self.nSteps_backward_a = self.nSteps - nTrj
         self.RTrj_a = empty((nTrj,d_u,d_u))
         self.QTrj_a = empty((nTrj,d,d_u))
         self.clvs_a = empty((nTrj,d,d_u))
@@ -144,18 +143,16 @@ class CLV():
         runner = self.runner 
         d = runner.state_dim
         d_u = self.subspace_dim
-        nSteps = self.nSteps 
+        nSteps = self.nSteps_a 
         adjointSolver = runner.adjointSolver
         primalTrj = empty((nSteps, d))
-        primalTrj[0] = self.stateZero
+        primalTrj[0] = self.stateZero_a
         parameter = 0.
         dt = self.runner.dt
         for n in range(1,nSteps):
             primalTrj[n], objectiveTrj = runner.primalSolver(primalTrj[n-1], \
                 parameter, 1)
-        adjoints = random.rand(d_u, d)
-        adjoints, R = linalg.qr(adjoints.T)
-        adjoints = adjoints.T
+        adjoints = self.adjoints 
         lyap_exps_a = self.lyap_exps_a
         nTrj = self.nTrj
         for n in range(nSteps-1,nTrj-1,-1):
