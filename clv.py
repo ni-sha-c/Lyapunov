@@ -124,7 +124,7 @@ class CLV():
         self.lyap_exps = lyap_exps
 
 
-    def backward_steps(self):
+    def backward_steps(self,primalInit=None):
         self.forward_steps()
         d_u = self.subspace_dim
         self.coeffsTrj[-1] = eye(d_u,d_u)
@@ -138,7 +138,7 @@ class CLV():
             self.clvs[i-1] /= linalg.norm(self.clvs[i-1],axis=0)
    
 
-    def backward_steps_adjoint(self):
+    def backward_steps_adjoint(self,primalInit=None):
         self.setup_adjoints()
         runner = self.runner 
         d = runner.state_dim
@@ -147,6 +147,8 @@ class CLV():
         adjointSolver = runner.adjointSolver
         primalTrj = empty((nSteps, d))
         primalTrj[0] = self.stateZero_a
+        if primalInit is not None:
+            primalTrj[0] = primalInit
         parameter = 0.
         dt = self.runner.dt
         for n in range(1,nSteps):
@@ -173,8 +175,8 @@ class CLV():
             self.RTrj_a[n] = R
 
 
-    def forward_steps_adjoint(self):
-        self.backward_steps_adjoint()
+    def forward_steps_adjoint(self,primalInit=None):
+        self.backward_steps_adjoint(primalInit)
         d_u = self.subspace_dim
         coeffsTrj_a = self.coeffsTrj_a
         coeffsTrj_a[0] = eye(d_u, d_u)
@@ -192,11 +194,11 @@ class CLV():
 
 
 
-    def compute_les_and_clvs(self):
-        self.backward_steps()
+    def compute_les_and_clvs(self,primalInit=None):
+        self.backward_steps(primalInit)
         return self.lyap_exps, self.clvs
 
-    def compute_les_and_clvs_adjoint(self):
-        self.forward_steps_adjoint()
+    def compute_les_and_clvs_adjoint(self,primalInit=None):
+        self.forward_steps_adjoint(primalInit)
         return self.lyap_exps_a, self.clvs_a
 

@@ -109,5 +109,28 @@ class ClvTest(unittest.TestCase):
             self.assertTrue(max(err_les[0],err_les[2])<0.2)
         self.assertTrue(err_les[0]<0.2)
 
+    def test_clv_orthogonality(self):
+        les, clvs = self.CLV.compute_les_and_clvs()
+        nSteps = self.CLV.nTrj
+        d_u = self.CLV.subspace_dim
+        d = self.runner.state_dim
+        self.assertEqual(clvs.shape, (nSteps, d, d_u))
+        primal = self.CLV.stateZero
+        les_a, clvs_a = self.CLV.compute_les_and_clvs_adjoint(primal)
+        mid_index = nSteps//2
+        clvs = clvs[mid_index].T
+        clvs_a = clvs_a[mid_index].T
+        angles = zeros((d_u, d_u))
+        for j in range(d_u):
+            for i in range(d_u):
+                angles[i,j] = dot(clvs[i],clvs_a[j])
+        print("Angles between tangent and adjoint clvs")
+        print(angles)
+        self.assertTrue(max(abs(diag(angles))) > 0.1)
+        if d_u > 2:
+            self.assertTrue(max(abs(angles[-1,:2])) < 1.e-10)
+
+
+
 if __name__=="__main__":
     unittest.main()
