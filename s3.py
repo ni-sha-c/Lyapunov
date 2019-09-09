@@ -54,11 +54,21 @@ class S3():
             X_u = dot(V.T, X_along_V)
             X_s = X - X_u
             zeta_s, sensitivity = runner.tangentSolver(zeta_s, primal,\
-                    parameter, 1, True) + X_s 
+                    parameter, 1, True)
+
+            zeta_s += X_s
+            zetas_dot_W = dot(W, zeta_s)
+            zetas_along_V = linalg.solve(cos_angles, zetas_dot_W)
+            zetas_u = dot(V.T, zetas_along_V)
+            zeta_s = zeta_s - zetas_u
+
+
+            for i in range(d_u):
+                zeta_s -= dot(zeta_s, W[i])*W[i]
             primal, objectiveTrj = runner.primalSolver(primal, parameter, 1)
             D_obj = runner.gradientObjective(primal, parameter)
-            stable_contrib += dot(zeta_s, D_obj) 
-            
+            stable_contrib += dot(zeta_s, D_obj)/nSteps 
+        stop 
              
 
 
