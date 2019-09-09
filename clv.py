@@ -173,8 +173,22 @@ class CLV():
             self.RTrj_a[n] = R
 
 
-
-
+    def forward_steps_adjoint(self):
+        self.backward_steps_adjoint()
+        d_u = self.subspace_dim
+        coeffsTrj_a = self.coeffsTrj_a
+        coeffsTrj_a[0] = eye(d_u, d_u)
+        clvs_a = self.clvs_a
+        QTrj_a = self.QTrj_a
+        RTrj_a = self.RTrj_a
+        clvs_a[0] = QTrj_a[0]
+        les = exp(self.lyap_exps_a*self.runner.dt)
+        for n in range(self.nTrj-1):
+            coeffsTrj_a[n+1] = linalg.solve(RTrj_a[n+1], \
+                    coeffsTrj_a[n])
+            coeffsTrj_a[n+1] *= les
+            clvs_a[n+1] = dot(QTrj_a[n+1], coeffsTrj_a[n+1])
+            clvs_a[n+1] /= linalg.norm(clvs_a[n+1], axis=0)
 
 
 
@@ -182,4 +196,7 @@ class CLV():
         self.backward_steps()
         return self.lyap_exps, self.clvs
 
+    def compute_les_and_clvs_adjoint(self):
+        self.forward_steps_adjoint()
+        return self.lyap_exps_a, self.clvs_a
 
