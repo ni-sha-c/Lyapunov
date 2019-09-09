@@ -8,7 +8,8 @@ class CLV():
         self.subspace_dim = d_u
         self.nTrj = nTrj
 
-    def setup(self):
+
+    def setup_tangents(self):
         nSpinUp = 500
         parameter = 0.
         runner = self.runner
@@ -18,20 +19,41 @@ class CLV():
             parameter, nSpinUp)
         d_u = self.subspace_dim
         self.nSteps = 10000
-        self.nSteps_backward = self.nTrj
-        nSteps_backward = self.nSteps_backward
-        self.nSteps_forward = self.nSteps - nSteps_backward
+
         tangents_mt1 = random.rand(d_u, d)
         tangents_mt1, R = linalg.qr(tangents_mt1.T)
         self.R = R
         self.tangents = tangents_mt1.T
         self.lyap_exps = zeros(d_u)
         self.primal = stateInit
+        self.nSteps_backward = self.nTrj
+        nSteps_backward = self.nSteps_backward
+        self.nSteps_forward = self.nSteps - nSteps_backward
+
         self.RTrj = empty((nSteps_backward,d_u,d_u))
         self.QTrj = empty((nSteps_backward,d,d_u))
         self.clvs = empty((nSteps_backward,d,d_u))
         self.coeffsTrj = empty((nSteps_backward,d_u,d_u))
         return
+
+    def setup_adjoints(self):
+        runner = self.runner
+        d = runner.state_dim
+        d_u = self.subspace_dim
+        
+        adjoints_mt1 = random.rand(d_u, d)
+        adjoints_mt1, R = linalg.qr(adjoints_mt1.T)
+        self.R_a = R
+        self.adjoints = adjoints_mt1.T
+        self.lyap_exps_a = zeros(d_u)
+        nTrj = self.nTrj
+        self.nSteps_backward_a = nSteps - nTrj
+        self.RTrj_a = empty((nTrj,d_u,d_u))
+        self.QTrj_a = empty((nTrj,d,d_u))
+        self.clvs_a = empty((nTrj,d,d_u))
+        self.coeffsTrj_a = empty((nTrj,d_u,d_u))
+        return
+
 
     def get_most_expanding_directions(self):
         self.setup()
@@ -71,6 +93,7 @@ class CLV():
         runner = self.runner
         tangents = self.tangents
         primal = self.primal
+        primalTrj = copy(self.primal)
         R = self.R
         parameter = 0.
         d_u = self.subspace_dim
@@ -87,12 +110,14 @@ class CLV():
             tangents = tangents.T
             primal, objectiveTrj = runner.primalSolver(primal, \
                 parameter, 1) 
+             
         self.primal = primal
         self.tangents = tangents
         self.R = R
         self.QTrj = QTrj
         self.RTrj = RTrj
         self.lyap_exps = lyap_exps
+
 
     def backward_steps(self):
         self.forward_steps()
@@ -106,7 +131,14 @@ class CLV():
             self.coeffsTrj[i-1] *= lyap_exps
             self.clvs[i-1] = dot(self.QTrj[i-1], self.coeffsTrj[i-1])
             self.clvs[i-1] /= linalg.norm(self.clvs[i-1],axis=0)
-    
+   
+
+    def backward_steps_adjoint(self):
+        self.primal = copy(self.stateZero)
+        
+
+
+
     def compute_les_and_clvs(self):
         self.backward_steps()
         return self.lyap_exps, self.clvs
