@@ -157,14 +157,25 @@ class CLV():
         adjoints, R = linalg.qr(adjoints.T)
         adjoints = adjoints.T
         lyap_exps_a = self.lyap_exps_a
-        for n in range(nSteps-1,-1,-1):
+        nTrj = self.nTrj
+        for n in range(nSteps-1,nTrj-1,-1):
             for j in range(d_u):
                 adjoints[j], sensitivity = adjointSolver(adjoints[j], primalTrj[n], \
                         parameter, 1, True)
             adjoints, R = linalg.qr(adjoints.T)
             adjoints = adjoints.T
-            lyap_exps_a += log(abs(diag(R)))/dt/nSteps 
-        return lyap_exps_a
+            lyap_exps_a += log(abs(diag(R)))/dt/nSteps
+        for n in range(nTrj-1,-1,-1):
+            for j in range(d_u):
+                adjoints[j], sensitivity = adjointSolver(adjoints[j], primalTrj[n], \
+                        parameter, 1, True)
+            adjoints, R = linalg.qr(adjoints.T)
+            adjoints = adjoints.T
+            lyap_exps_a += log(abs(diag(R)))/dt/nSteps
+            self.QTrj_a[n] = adjoints.T
+            self.RTrj_a[n] = R
+
+
 
 
 

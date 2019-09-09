@@ -59,14 +59,14 @@ class ClvTest(unittest.TestCase):
         self.assertTrue(err_les[0]<0.2)
 
     def test_les_adj(self):
-        les = self.CLV.backward_steps_adjoint()
+        self.CLV.backward_steps_adjoint()
+        les = self.CLV.lyap_exps_a
         les_benchmark = array([0.906, 1.e-8, -14.572])
         d_u = self.CLV.subspace_dim
         les_benchmark = les_benchmark[:d_u]
         err_les = abs((les_benchmark - les)/les_benchmark)
         print("Computed LEs from adjoint" , les)
         print("Benchmark LEs", les_benchmark)
-        print(err_les)
         if d_u > 2:
             self.assertTrue(max(err_les[0],err_les[2])<0.2)
         self.assertTrue(err_les[0]<0.2)
