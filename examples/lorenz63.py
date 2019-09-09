@@ -38,9 +38,9 @@ class Runner(object):
         sourceTerms[1] = self.dt*fields[0]
         return sourceTerms
         
-    def gradientObjective(self, fields, parameter, nSteps):
+    def gradientObjective(self, fields, parameter):
         dJ = np.zeros_like(fields)
-        dJ[-1] = 1.0/nSteps
+        dJ[-1] = 1.0
         return dJ
 
     def tangentSolver(self, initFields, initPrimalFields, \
@@ -55,8 +55,7 @@ class Runner(object):
                     primalTrj[i-1], parameter, 1)
         xt, yt, zt = initFields
         sensitivity = np.dot(initFields, \
-                    self.gradientObjective(primalTrj[0], parameter, \
-                    nSteps))
+                    self.gradientObjective(primalTrj[0], parameter))/nSteps
 
         for i in range(nSteps):
             x, y, z = primalTrj[i]
@@ -76,8 +75,7 @@ class Runner(object):
 
             if(i < nSteps-1):
                 sensitivity += np.dot(finalFields, \
-                    self.gradientObjective(primalTrj[i+1], parameter, \
-                    nSteps))
+                    self.gradientObjective(primalTrj[i+1], parameter))/nSteps
         return finalFields, sensitivity
             
 
@@ -111,7 +109,7 @@ class Runner(object):
             finalFields = np.array([xa, ya, za])
             if(homogeneous==False):
                 finalFields += self.gradientObjective(primalTrj[i],\
-                        parameter, nSteps)
+                        parameter)/nSteps
                 xa, ya, za = finalFields
             if(i > 0):
                 sensitivity += np.dot(finalFields, self.source(\
