@@ -194,11 +194,12 @@ class CLV():
 
 
 
-    def compute_les_and_clvs(self):
+    def compute_les_and_clvs(self,s3Flag=None):
         self.backward_steps()
-        return self.lyap_exps, self.clvs
+        if s3Flag is None:
+            return self.lyap_exps, self.clvs
 
-    def compute_les_and_clvs_adjoint(self,primalInit=None):
+    def compute_les_and_clvs_adjoint(self,primalInit=None,s3Flag=None):
         self.forward_steps_adjoint(primalInit)
         return self.lyap_exps_a, self.clvs_a
 
