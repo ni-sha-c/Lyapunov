@@ -4,7 +4,7 @@ class Runner(object):
 
     def __init__(self, *args, **kwargs):
         self.solverName = "Kuznetsov-Plykin"
-        self.dt = 2.e-3
+        self.dt = 1.#2.e-3
         self.s0 = array([1.0,1.0])
         self.T = 6.0
         self.state_dim = 4

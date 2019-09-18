@@ -1,7 +1,7 @@
 from numpy import *
 import sys
 sys.path.insert(0,'examples/')
-from lorenz63 import Runner
+from kuznetsov_poincare import Runner
 # phi := grad_x(1/norm(Dprimal(x) CLV(x)))
 class CLV():
     def __init__(self,d_u=3,nTrj=500):
@@ -35,7 +35,7 @@ class CLV():
         self.QTrj = empty((nSteps_backward,d,d_u))
         self.clvs = empty((nSteps_backward,d,d_u))
         self.coeffsTrj = empty((nSteps_backward,d_u,d_u))
-        self.phi = empty((nSteps_backward,d_u,d_u))
+        self.phi = empty((nSteps_backward,d_u))
         return
 
     def setup_adjoints(self):
