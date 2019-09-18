@@ -2,6 +2,7 @@ from numpy import *
 import sys
 sys.path.insert(0,'examples/')
 from lorenz63 import Runner
+# phi := grad_x(1/norm(Dprimal(x) CLV(x)))
 class CLV():
     def __init__(self,d_u=3,nTrj=500):
         self.runner = Runner()
@@ -34,6 +35,7 @@ class CLV():
         self.QTrj = empty((nSteps_backward,d,d_u))
         self.clvs = empty((nSteps_backward,d,d_u))
         self.coeffsTrj = empty((nSteps_backward,d_u,d_u))
+        self.phi = empty((nSteps_backward,d_u,d_u))
         return
 
     def setup_adjoints(self):
@@ -135,7 +137,8 @@ class CLV():
                     self.coeffsTrj[i]) 
             self.coeffsTrj[i-1] *= lyap_exps
             self.clvs[i-1] = dot(self.QTrj[i-1], self.coeffsTrj[i-1])
-            self.clvs[i-1] /= linalg.norm(self.clvs[i-1],axis=0)
+            self.phi[i-1] = linalg.norm(self.clvs[i-1],axis=0)
+            self.clvs[i-1] /= self.phi[i-1]
    
 
     def backward_steps_adjoint(self,primalInit=None):
@@ -198,6 +201,7 @@ class CLV():
         self.backward_steps()
         if s3Flag is None:
             return self.lyap_exps, self.clvs
+        return self.lyap_exps, self.clvs, self.phi 
 
     def compute_les_and_clvs_adjoint(self,primalInit=None,s3Flag=None):
         self.forward_steps_adjoint(primalInit)
