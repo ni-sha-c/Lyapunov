@@ -1,7 +1,5 @@
 from pylab import *
 from numpy import *
-from numba import jitclass
-from numba import int64, float64
 class Runner(object):
 
     def __init__(self, *args, **kwargs):
@@ -28,11 +26,13 @@ class Runner(object):
     def primalSolver(self,u0,parameter,n=1):
         u = copy(u0)
         s = array([parameter, 1.0])
+        objectiveTrj = zeros(n)
         for i in range(n):
             u = self.primal_halfstep(u,s,-1.,-1.)
             u = self.primal_halfstep(u,s,1.,1.)
+            objectiveTrj[i] = self.objective(u,s) 
         u[3] = u0[3]
-        return u
+        return u, objectiveTrj
     
     
     def primal_halfstep(self,u,s0,sigma,a):
@@ -66,7 +66,7 @@ class Runner(object):
         return u1
 
     
-    def objective(self,u,s,theta0,dtheta,phi0,dphi):
+    def objective(self,u,s):
         r = sqrt(u[0]**2.0 + u[1]**2.0 + u[2]**2.0)
         theta = 0.0
         if(r > 0):
@@ -493,38 +493,40 @@ class Runner(object):
             res += dot(diDFDs,DFDuinv[i])
         return res
     
-     def tangentSolver(self,v0,u,parameter,n=1,homo=False):
+    def tangentSolver(self,v0,u0,parameter,n=1,homogeneous=False):
         ds = array([1.,0.])
         s = array([parameter, 1.0])
         sens = 0.
+        u = copy(u0)
+        v1 = copy(v0)
         for i in range(n): 
-            v1 = dot(self.gradFs(u,s),v0)
-            if homo==False:
+            v1 = dot(self.gradFs(u,s),v1)
+            if homogeneous==False:
                 v1 = self.tangent_source(v1,u,s,ds)
             u, J = self.primalSolver(u, parameter, 1)
         return v1, sens
     	
     
-    def adjointSolver(self,w1,u,parameter,n,homo=False):
+    def adjointSolver(self,w1,u,parameter,n,homogeneous=False):
         uTrj = np.empty(shape=(n, u.shape[0]))
         objectiveTrj = np.empty(n)
         uTrj[0] = u
-        objectiveTrj[0] = self.objective(u[0],parameter)
+        objectiveTrj[0] = self.objective(uTrj[0],parameter)
         for i in range(1, n):
             uTrj[i], objectiveTrj[i] = self.primalSolver(\
                     uTrj[i-1], parameter, 1)
         sensitivity = 0.
         w0 = copy(w1)
-        s = array([parameter, 0.])
+        s = array([parameter, 1.])
         ds = array([1.0, 0.])
         for i in range(n-1, -1, -1):
             u0 = uTrj[i]
             w0 = dot(self.gradFs(u0,s).T,w0) 
-            if(homo==False):
+            if(homogeneous==False):
                 w0 += self.gradientObjective(u0,parameter)\
                         /n
             if(i > 0):
-                sensitivity += np.dot(finalFields, self.tangent_source(zeros(self.state_dim),uTrj[i-1],s,ds))
+                sensitivity += np.dot(w0, self.tangent_source(zeros(self.state_dim),uTrj[i-1],s,ds))
 
 
         return w0, sensitivity
