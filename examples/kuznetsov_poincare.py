@@ -6,18 +6,14 @@ class Runner(object):
         self.solverName = "Kuznetsov-Plykin"
         self.dt = 1.#2.e-3
         self.s0 = array([1.0,1.0])
-        self.T = 6.0
-        self.state_dim = 4
+        self.state_dim = 3
         self.boundaries = ones((2,self.state_dim))        
         self.boundaries[0] = -1.
         self.boundaries[0,-1] = 0.
-        self.boundaries[1,-1] = self.T
-        self.n_poincare = int(ceil(self.T/self.dt))
         self.u_init = rand(self.state_dim)*(self.boundaries[1]- \
                      self.boundaries[0]) + self.boundaries[0]
         u_init_norm = norm(self.u_init)
         self.u_init /= u_init_norm
-        self.u_init[-1] = 0.0
         self.param_dim = self.s0.size
         self.n_theta = 20
         self.n_phi = 20
@@ -31,7 +27,6 @@ class Runner(object):
             u = self.primal_halfstep(u,s,-1.,-1.)
             u = self.primal_halfstep(u,s,1.,1.)
             objectiveTrj[i] = self.objective(u,s) 
-        u[3] = u0[3]
         return u, objectiveTrj
     
     
@@ -40,7 +35,6 @@ class Runner(object):
         x = u[0]
         y = u[1]
         z = u[2]
-        T = self.T
         r2 = (x**2.0 + y**2.0 + z**2.0)
         r = sqrt(r2)
         rxy2 = x**2.0 + y**2.0
@@ -61,8 +55,6 @@ class Runner(object):
                 y*cterm)
         u1[2] = coeff1*coeff2*(-a*x*emerxy2*cterm + \
                 a*sigma*y*sterm)
-        u1[3] = (u[3] + T/2.0)%T
-    
         return u1
 
     
@@ -445,10 +437,7 @@ class Runner(object):
         dFdu[2,2] = dcoeff1_dz*coeff2*(-a*x*emerxy2*cterm + \
                 a*sigma*y*sterm) + coeff1*coeff2*( \
                 -a*x*emerxy2*dcterm_dz + a*sigma*y*dsterm_dz)
-    
-    
-        dFdu[3,3] = 1.0
-    
+     
         return dFdu
     
     

@@ -15,7 +15,7 @@ class CLV():
         parameter = 0.
         runner = self.runner
         d = runner.state_dim
-        stateInit = random.rand(d)
+        stateInit = runner.u_init
         stateInit, objectiveTrj = runner.primalSolver(stateInit,\
             parameter, nSpinUp)
         d_u = self.subspace_dim
