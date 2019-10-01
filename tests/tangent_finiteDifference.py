@@ -9,7 +9,7 @@ class KuznetsovTest(unittest.TestCase):
     def setUp(self):
         self.runner = Runner()
     def collate_nearby_points(self):
-        nSteps = 1000
+        nSteps = 2000
         parameter = 1.
         runner = self.runner
         initPrimal = runner.u_init
@@ -20,13 +20,57 @@ class KuznetsovTest(unittest.TestCase):
         initTangent0 /= np.linalg.norm(initTangent0)
         initTangent = np.copy(initTangent0)
         initPrimal = np.copy(initPrimal0)
+        clv_trj_orig = np.empty((nSteps, d))
+        primal_orig = np.empty((nSteps,d))
         for n in range(nSteps):
+            primal_orig[n] = initPrimal
+            clv_trj_orig[n] = initTangent
             finalTangent, sensitivity = runner.tangentSolver(initTangent, \
                 initPrimal, parameter, 1, homogeneous=True)
             initPrimal, objectiveTrj = runner.primalSolver(initPrimal, \
                     parameter, 1)
             initTangent = finalTangent/np.linalg.norm(finalTangent)
-        
+        initPrimal = initPrimal + 1.e-8*initTangent
+        primal_pert = np.empty((nSteps, d))
+        clv_trj_pert = np.empty((nSteps, d))
+        for n in range(nSteps):
+            primal_pert[n] = initPrimal
+            clv_trj_orig[n] = initTangent
+            finalTangent, sensitivity = runner.tangentSolver(initTangent, \
+                initPrimal, parameter, 1, homogeneous=True)
+            initPrimal, objectiveTrj = runner.primalSolver(initPrimal, \
+                    parameter, 1)
+            initTangent = finalTangent/np.linalg.norm(finalTangent)
+        distances = np.empty((nSteps, nSteps))
+        distances_along_clvs = np.empty((nSteps, nSteps))
+        closest_times = np.empty(nSteps,dtype=int)
+        closest_times_as_per_clvs = np.empty(nSteps,dtype=int)
+        for i in range(nSteps):
+            distances[i] = np.linalg.norm(primal_pert[i] - primal_orig,\
+                    axis=1)
+            distances_along_clvs[i] = np.diag(np.abs(np.matmul(\
+                    primal_pert[i] - primal_orig, clv_trj_orig.T)))
+            closest_times[i] = np.argmin(distances[i])
+            closest_times_as_per_clvs[i] = np.argmin(distances_along_clvs[i])
+        fig, ax = subplots(1,1,figsize=(8,8))
+        ax.set_xlim([-3.0,3.0])
+        ax.set_ylim([-3.5,2.0])
+        nPlot = 10
+        original_re_part, original_im_part = runner.stereographic_projection(\
+                primal_orig[closest_times_as_per_clvs[:nPlot]].T)
+        perturbed_re_part, perturbed_im_part = runner.stereographic_projection(\
+                primal_pert[:nPlot].T)
+
+
+        alpha = 0.5
+        original, = ax.plot(original_re_part, original_im_part, '.',ms=20, \
+                    color="k")
+        perturbed, = ax.plot(perturbed_re_part, perturbed_im_part, '.', ms=20, \
+                    color="b")
+      
+
+
+
     def plot_two_trajectories_history(self):
         nSteps = 1000
         parameter = 1.
@@ -322,7 +366,8 @@ class KuznetsovTest(unittest.TestCase):
 if __name__ =="__main__":
     kuz = KuznetsovTest()
     kuz.setUp()
-    anim = kuz.plot_two_trajectories_history()
+    kuz.collate_nearby_points()
+    #anim = kuz.plot_two_trajectories_history()
     #unittest.main()
 
 
