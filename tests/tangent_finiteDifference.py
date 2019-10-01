@@ -67,7 +67,12 @@ class KuznetsovTest(unittest.TestCase):
                     color="k")
         perturbed, = ax.plot(perturbed_re_part, perturbed_im_part, '.', ms=20, \
                     color="b")
-        stop      
+        clv_re_orig, clv_im_orig = runner.convert_tangent_euclidean_to_stereo(primal_orig[closest_times[:nPlot]].T, clv_trj[closest_times[:nPlot]].T)
+        norm_clv = clv_re_orig*clv_re_orig + clv_im_orig*clv_im_orig
+        norm_clv = np.sqrt(norm_clv)
+        clv_re_orig /= norm_clv
+        clv_im_orig /= norm_clv
+          
 
 
 
