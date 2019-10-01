@@ -57,7 +57,7 @@ class KuznetsovTest(unittest.TestCase):
         ax.set_ylim([-3.5,2.0])
         nPlot = 10
         original_re_part, original_im_part = runner.stereographic_projection(\
-                primal_orig[closest_times_as_per_clvs[:nPlot]].T)
+                primal_orig[closest_times[:nPlot]].T)
         perturbed_re_part, perturbed_im_part = runner.stereographic_projection(\
                 primal_pert[:nPlot].T)
 
@@ -67,7 +67,12 @@ class KuznetsovTest(unittest.TestCase):
                     color="k")
         perturbed, = ax.plot(perturbed_re_part, perturbed_im_part, '.', ms=20, \
                     color="b")
-      
+        clv_re_orig, clv_im_orig = runner.convert_tangent_euclidean_to_stereo(primal_orig[closest_times[:nPlot]].T, clv_trj[closest_times[:nPlot]].T)
+        norm_clv = clv_re_orig*clv_re_orig + clv_im_orig*clv_im_orig
+        norm_clv = np.sqrt(norm_clv)
+        clv_re_orig /= norm_clv
+        clv_im_orig /= norm_clv
+          
 
 
 
